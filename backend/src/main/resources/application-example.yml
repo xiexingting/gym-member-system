@@ -1,0 +1,12 @@
+# 配置模板：复制本文件并改名为 application.yml，再把密码改成你自己电脑的 MySQL 密码
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/gym_db?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    password: "在这里填你的MySQL密码"
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.gym.entity
+  configuration:
+    map-underscore-to-camel-case: true
