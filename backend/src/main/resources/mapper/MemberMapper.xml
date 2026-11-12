@@ -10,4 +10,9 @@
         INSERT INTO member(member_name,phone,gender,id_card,register_time,expire_time,member_status,remark)
         VALUES(#{memberName},#{phone},#{gender},#{idCard},#{registerTime},#{expireTime},#{memberStatus},#{remark})
     </insert>
+
+    <!-- ============ 根据ID删除SQL ============ -->
+    <delete id="deleteById">
+        DELETE FROM member WHERE member_id = #{memberId}
+    </delete>
 </mapper>

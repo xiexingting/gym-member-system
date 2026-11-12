@@ -23,4 +23,10 @@ public class MemberServiceImpl implements MemberService {
     public int insertMember(Member member) {
         return memberMapper.insert(member);
     }
+
+    // ============ 删除 ============
+    @Override
+    public int deleteMember(Integer memberId) {
+        return memberMapper.deleteById(memberId);
+    }
 }

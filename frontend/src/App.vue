@@ -14,6 +14,8 @@
           <th>性别</th>
           <th>到期时间</th>
           <th>备注</th>
+		  <th>操作</th>
+
         </tr>
       </thead>
       <tbody>
@@ -24,6 +26,10 @@
           <td>{{ item.gender }}</td>
           <td>{{ formatDate(item.expireTime) }}</td>
           <td>{{ item.remark }}</td>
+		  <td>
+		    <button class="del-btn" @click="handleDelete(item.memberId)">删除</button>
+		  </td>
+
         </tr>
       </tbody>
     </table>
@@ -59,6 +65,22 @@ const getMemberList = async () => {
     console.log('会员数据：', res.data)
   } catch(err) {
     alert('接口请求失败！请确认SpringBoot后端已经启动')
+    console.error(err)
+  }
+}
+// 删除会员：先弹确认框，确认后调删除接口，再刷新列表
+const handleDelete = async (id) => {
+  if(!confirm('确定要删除这个会员吗？删除后不可恢复')) return
+  try {
+    const res = await axios.delete(`http://localhost:8080/api/member/delete/${id}`)
+    if(res.data === 'success'){
+      alert('删除成功')
+      getMemberList()
+    } else {
+      alert('删除失败，未找到该会员')
+    }
+  } catch(err) {
+    alert('删除请求失败，检查后端是否启动')
     console.error(err)
   }
 }
@@ -100,4 +122,17 @@ h3{
 .expire-row{
   background-color: #ffdddd;
 }
+
+.del-btn{
+  padding:5px 12px;
+  background:#d9534f;
+  color:white;
+  border:none;
+  border-radius:4px;
+  cursor:pointer;
+}
+.del-btn:hover{
+  background:#c9302c;
+}
+
 </style>
