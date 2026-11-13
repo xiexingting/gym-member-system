@@ -3,6 +3,7 @@
     <h2>健身房会员管理系统</h2>
 
     <AddMember @added="getMemberList" />
+    <EditMember :memberId="editId" @saved="getMemberList" @close="editId = null" />
 
     <h3>会员列表 <span style="color:red">（红色行代表会员已到期）</span></h3>
     <table>
@@ -27,6 +28,7 @@
           <td>{{ formatDate(item.expireTime) }}</td>
           <td>{{ item.remark }}</td>
 		  <td>
+			<button class="edit-btn" @click="editId = item.memberId">编辑</button>
 		    <button class="del-btn" @click="handleDelete(item.memberId)">删除</button>
 		  </td>
 
@@ -40,8 +42,12 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import AddMember from './components/AddMember.vue'
+import EditMember from './components/EditMember.vue'
+
 
 const memberList = ref([])
+const editId = ref(null)
+
 
 // 判断会员是否到期
 const isExpire = (expireTime) => {
@@ -96,6 +102,16 @@ onMounted(()=>{
   margin: 0 auto;
   padding:30px;
 }
+.edit-btn{
+  padding:5px 12px;
+  margin-right:6px;
+  background:#4472C4;
+  color:white;
+  border:none;
+  border-radius:4px;
+  cursor:pointer;
+}
+
 table {
   width:100%;
   border-collapse: collapse;

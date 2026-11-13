@@ -11,4 +11,9 @@ public interface MemberMapper {
     int insert(Member member);
     // 根据会员ID删除
     int deleteById(Integer memberId);
+        // 根据ID查询单个会员
+        Member selectById(Integer memberId);
+        // 根据ID修改会员信息
+        int updateById(Member member);
+
 }

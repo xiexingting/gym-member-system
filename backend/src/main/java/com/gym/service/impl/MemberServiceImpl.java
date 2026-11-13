@@ -29,4 +29,18 @@ public class MemberServiceImpl implements MemberService {
     public int deleteMember(Integer memberId) {
         return memberMapper.deleteById(memberId);
     }
+
+    // ============ 按ID查询 ============
+    @Override
+    public Member getMemberById(Integer memberId) {
+        return memberMapper.selectById(memberId);
+    }
+
+    // ============ 修改 ============
+    @Override
+    public int updateMember(Member member) {
+        return memberMapper.updateById(member);
+    }
+
+
 }

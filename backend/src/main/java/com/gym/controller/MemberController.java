@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import jakarta.annotation.Resource;
 import java.util.List;
+import org.springframework.web.bind.annotation.PutMapping;
 
 @RestController
 @RequestMapping("/api/member")
@@ -43,4 +44,18 @@ public class MemberController {
         int rows = memberService.deleteMember(memberId);
         return rows > 0 ? "success" : "fail";
     }
+
+    // ============ 按ID查询单个会员 ============
+    @GetMapping("/get/{id}")
+    public Member getMember(@PathVariable("id") Integer memberId){
+        return memberService.getMemberById(memberId);
+    }
+
+    // ============ 修改会员 ============
+    @PutMapping("/update")
+    public String updateMember(@RequestBody Member member){
+        int rows = memberService.updateMember(member);
+        return rows > 0 ? "success" : "fail";
+    }
+
 }

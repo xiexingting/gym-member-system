@@ -15,4 +15,23 @@
     <delete id="deleteById">
         DELETE FROM member WHERE member_id = #{memberId}
     </delete>
+    <!-- ============ 根据ID查询单个 ============ -->
+    <select id="selectById" resultType="Member">
+        SELECT * FROM member WHERE member_id = #{memberId}
+    </select>
+
+    <!-- ============ 根据ID修改 ============ -->
+    <update id="updateById">
+        UPDATE member
+        SET member_name = #{memberName},
+        phone = #{phone},
+        gender = #{gender},
+        id_card = #{idCard},
+        expire_time = #{expireTime},
+        remark = #{remark}
+        WHERE member_id = #{memberId}
+    </update>
+
 </mapper>
+
+
