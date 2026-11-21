@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gym.mapper.CardTypeMapper">
+
+    <select id="selectAll" resultType="CardType">
+        SELECT * FROM member_card_type
+        ORDER BY status DESC, card_id DESC
+    </select>
+
+    <select id="selectOnline" resultType="CardType">
+        SELECT * FROM member_card_type
+        WHERE status = 1
+        ORDER BY card_id
+    </select>
+
+    <select id="selectById" resultType="CardType">
+        SELECT * FROM member_card_type WHERE card_id = #{cardId}
+    </select>
+
+    <insert id="insert">
+        INSERT INTO member_card_type(card_name, price, valid_days, card_type, total_times, remark, status)
+        VALUES(#{cardName}, #{price}, #{validDays}, #{cardType}, #{totalTimes}, #{remark}, #{status})
+    </insert>
+
+    <update id="updateById">
+        UPDATE member_card_type
+        SET card_name = #{cardName},
+            price = #{price},
+            valid_days = #{validDays},
+            card_type = #{cardType},
+            total_times = #{totalTimes},
+            remark = #{remark},
+            status = #{status}
+        WHERE card_id = #{cardId}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM member_card_type WHERE card_id = #{cardId}
+    </delete>
+
+    <!-- 删除前检查：已被会员续费使用过的卡种不允许删除（可下架） -->
+    <select id="countUsedByCard" resultType="int">
+        SELECT COUNT(*) FROM member_recharge WHERE card_id = #{cardId}
+    </select>
+
+</mapper>

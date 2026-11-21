@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gym.mapper.ExpiryReminderMapper">
+
+    <select id="selectAll" resultType="ExpiryReminder">
+        SELECT * FROM expiry_reminder
+        <where>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="type != null">
+                AND reminder_type = #{type}
+            </if>
+        </where>
+        ORDER BY status ASC, reminder_type DESC, reminder_date DESC, reminder_id DESC
+    </select>
+
+    <!-- 同一天、同一会员、同一提醒类型只生成一条，避免定时任务重复刷记录 -->
+    <select id="countExisting" resultType="int">
+        SELECT COUNT(*) FROM expiry_reminder
+        WHERE member_id = #{memberId}
+          AND reminder_type = #{type}
+          AND reminder_date = DATE(#{date})
+    </select>
+
+    <insert id="insert">
+        INSERT INTO expiry_reminder(member_id, member_name, expire_time, reminder_type, reminder_date, status)
+        VALUES(#{memberId}, #{memberName}, #{expireTime}, #{reminderType}, #{reminderDate}, #{status})
+    </insert>
+
+    <update id="markHandled">
+        UPDATE expiry_reminder
+        SET status = 1, remark = #{remark}
+        WHERE reminder_id = #{reminderId}
+    </update>
+
+</mapper>
