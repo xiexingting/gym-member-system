@@ -1,49 +1,84 @@
 <template>
-  <div class="mask" v-if="visible">
-    <div class="dialog">
-      <h3>编辑会员</h3>
-      <div class="form-item">
-        <label>姓名：</label>
-        <input v-model="form.memberName"/>
-      </div>
-      <div class="form-item">
-        <label>手机号：</label>
-        <input v-model="form.phone"/>
-      </div>
-      <div class="form-item">
-        <label>身份证：</label>
-        <input v-model="form.idCard"/>
-      </div>
-      <div class="form-item">
-        <label>性别：</label>
-        <input v-model="form.gender"/>
-      </div>
-      <div class="form-item">
-        <label>到期时间：</label>
-        <input type="date" v-model="form.expireTime"/>
-      </div>
-      <div class="form-item">
-        <label>备注：</label>
-        <input v-model="form.remark"/>
-      </div>
-      <div class="btns">
-        <button class="save-btn" @click="save">保存修改</button>
-        <button class="cancel-btn" @click="close">取消</button>
-      </div>
-    </div>
-  </div>
+  <el-dialog
+    v-model="visible"
+    title="编辑会员"
+    width="560px"
+    :close-on-click-modal="false"
+    destroy-on-close
+    v-loading="loading"
+  >
+    <el-form ref="formRef" :model="form" :rules="rules" label-width="88px">
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="姓名" prop="memberName">
+            <el-input v-model="form.memberName" placeholder="请输入会员姓名" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="手机号" prop="phone">
+            <el-input v-model="form.phone" placeholder="请输入手机号" />
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-form-item label="身份证" prop="idCard">
+        <el-input v-model="form.idCard" placeholder="选填" maxlength="18" />
+      </el-form-item>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="性别" prop="gender">
+            <el-select v-model="form.gender" placeholder="请选择" clearable style="width: 100%">
+              <el-option label="男" value="男" />
+              <el-option label="女" value="女" />
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="到期时间" prop="expireTime">
+            <el-date-picker
+              v-model="form.expireTime"
+              type="date"
+              value-format="YYYY-MM-DD"
+              placeholder="选择日期"
+              style="width: 100%"
+            />
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-form-item label="备注">
+        <el-input v-model="form.remark" type="textarea" :rows="3" placeholder="选填" />
+      </el-form-item>
+    </el-form>
+
+    <template #footer>
+      <el-button @click="visible = false">取消</el-button>
+      <el-button type="primary" :loading="submitting" @click="save">保存修改</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup>
-import { reactive, ref, watch } from 'vue'
-import axios from 'axios'
+import { reactive, ref, computed, watch } from 'vue'
+import { ElMessage } from 'element-plus'
+import request from '../utils/request'
 
 const props = defineProps({
+  visible: { type: Boolean, default: false },
   memberId: { type: Number, default: null }
 })
-const emit = defineEmits(['saved', 'close'])
+const emit = defineEmits(['update:visible', 'saved'])
 
-const visible = ref(false)
+const visible = computed({
+  get: () => props.visible,
+  set: (val) => emit('update:visible', val)
+})
+
+const formRef = ref(null)
+const loading = ref(false)
+const submitting = ref(false)
+
 const form = reactive({
   memberId: null,
   memberName: '',
@@ -54,81 +89,66 @@ const form = reactive({
   remark: ''
 })
 
-// 监听传入的 ID：一旦有值就请求该会员数据并弹窗
-watch(() => props.memberId, async (id) => {
-  if(!id){
+const rules = {
+  memberName: [{ required: true, message: '请输入会员姓名', trigger: 'blur' }],
+  phone: [{ required: true, message: '请输入手机号', trigger: 'blur' }]
+}
+
+// 后端 Date 可能序列化成时间戳数字或 ISO 字符串，统一转成 input 需要的 YYYY-MM-DD
+const toInputDate = (val) => {
+  if (!val) return ''
+  const d = val instanceof Date ? val : new Date(val)
+  if (Number.isNaN(d.getTime())) return ''
+  const p = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+}
+
+const loadMember = async (id) => {
+  loading.value = true
+  try {
+    const res = await request.get(`/api/member/get/${id}`)
+    const data = res.data || {}
+    Object.assign(form, {
+      memberId: data.memberId,
+      memberName: data.memberName || '',
+      phone: data.phone || '',
+      idCard: data.idCard || '',
+      gender: data.gender || '',
+      expireTime: toInputDate(data.expireTime),
+      remark: data.remark || ''
+    })
+    formRef.value?.clearValidate()
+  } catch (err) {
+    console.error(err)
     visible.value = false
-    return
+  } finally {
+    loading.value = false
   }
-  const res = await axios.get(`http://localhost:8080/api/member/get/${id}`)
-  Object.assign(form, res.data)
-  // 日期转成 input 需要的 年-月-日 格式
-  const d = new Date(res.data.expireTime)
-  const p = (n) => String(n).padStart(2,'0')
-  form.expireTime = `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`
-  visible.value = true
-})
+}
+
+// 弹窗打开、或切换编辑对象时，重新拉取数据
+watch(
+  () => [props.visible, props.memberId],
+  ([isVisible, id]) => {
+    if (isVisible && id) loadMember(id)
+  },
+  { immediate: true }
+)
 
 const save = async () => {
-  const res = await axios.put('http://localhost:8080/api/member/update', form)
-  if(res.data === 'success'){
-    alert('修改成功')
-    close()
+  const valid = await formRef.value.validate().catch(() => false)
+  if (!valid) return
+
+  submitting.value = true
+  try {
+    await request.put('/api/member/update', form)
+    ElMessage.success('修改成功')
+    visible.value = false
     emit('saved')
-  } else {
-    alert('修改失败')
+  } catch (err) {
+    console.error(err)
+  } finally {
+    submitting.value = false
   }
 }
-
-const close = () => {
-  visible.value = false
-  emit('close')
-}
 </script>
-
-<style scoped>
-.mask{
-  position: fixed;
-  top:0; left:0; right:0; bottom:0;
-  background: rgba(0,0,0,0.4);
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  z-index:999;
-}
-.dialog{
-  background:#fff;
-  padding:25px 35px;
-  border-radius:8px;
-  width:380px;
-}
-.form-item{
-  margin:12px 0;
-}
-label{
-  display:inline-block;
-  width:90px;
-}
-input{
-  padding:6px;
-  width:220px;
-}
-.btns{
-  text-align:center;
-  margin-top:15px;
-}
-.btns button{
-  padding:8px 20px;
-  margin:0 8px;
-  border:none;
-  border-radius:4px;
-  cursor:pointer;
-  color:white;
-}
-.save-btn{
-  background:#4472C4;
-}
-.cancel-btn{
-  background:#999;
-}
-</style>
