@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.gym.mapper.MemberMapper">
+
     <select id="selectAll" resultType="Member">
-        SELECT * FROM member
+        SELECT * FROM member ORDER BY member_id DESC
     </select>
 
     <!-- ============ 新增插入SQL ============ -->
@@ -15,6 +16,7 @@
     <delete id="deleteById">
         DELETE FROM member WHERE member_id = #{memberId}
     </delete>
+
     <!-- ============ 根据ID查询单个 ============ -->
     <select id="selectById" resultType="Member">
         SELECT * FROM member WHERE member_id = #{memberId}
@@ -32,6 +34,57 @@
         WHERE member_id = #{memberId}
     </update>
 
+    <!-- ===== 搜索 + 分页：姓名或手机号模糊匹配 ===== -->
+    <sql id="keywordWhere">
+        <where>
+            <if test="keyword != null and keyword.trim() != ''">
+                AND (member_name LIKE CONCAT('%', #{keyword}, '%')
+                     OR phone LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectByPage" resultType="Member">
+        SELECT * FROM member
+        <include refid="keywordWhere"/>
+        ORDER BY member_id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="countByKeyword" resultType="int">
+        SELECT COUNT(*) FROM member
+        <include refid="keywordWhere"/>
+    </select>
+
+    <!-- ===== 续费时只改到期时间，不动其他字段 ===== -->
+    <update id="updateExpireTime">
+        UPDATE member SET expire_time = #{expireTime} WHERE member_id = #{memberId}
+    </update>
+
+    <!-- ===== 续费时顺手更新备注（仅当请求带了 remark 才调用） ===== -->
+    <update id="updateRemark">
+        UPDATE member SET remark = #{remark} WHERE member_id = #{memberId}
+    </update>
+
+    <!-- ===== 状态管理：1=正常 2=停用 3=已到期 ===== -->
+    <update id="updateStatus">
+        UPDATE member SET member_status = #{status} WHERE member_id = #{memberId}
+    </update>
+
+    <!-- 续费后恢复状态：只把已到期(3)改回正常(1)，停用(2)保持不变 -->
+    <update id="restoreStatusAfterRenew">
+        UPDATE member SET member_status = 1
+        WHERE member_id = #{memberId} AND member_status = 3
+    </update>
+
+    <!-- 到期提醒：已到期或 days 天内到期，排除手动停用的会员 -->
+    <select id="selectNeedRemind" resultType="Member">
+        SELECT member_id, member_name, expire_time, member_status
+        FROM member
+        WHERE member_status != 2
+          AND expire_time IS NOT NULL
+          AND expire_time &lt; DATE_ADD(CURDATE(), INTERVAL #{days} DAY)
+        ORDER BY expire_time ASC
+    </select>
+
 </mapper>
-
-
