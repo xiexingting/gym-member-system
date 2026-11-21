@@ -16,6 +16,12 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    /** 参数校验类异常：把具体原因返回给前端，方便用户修正 */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public Result<Void> handleIllegalArgument(IllegalArgumentException e) {
+        return Result.fail(400, e.getMessage());
+    }
+
     @ExceptionHandler(Exception.class)
     public Result<Void> handleException(Exception e) {
         // 服务端日志保留完整堆栈，方便排查；返回给前端的只有友好提示
