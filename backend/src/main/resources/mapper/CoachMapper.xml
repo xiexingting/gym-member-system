@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gym.mapper.CoachMapper">
+
+    <select id="selectAll" resultType="Coach">
+        SELECT * FROM coach
+        ORDER BY status DESC, coach_id DESC
+    </select>
+
+    <select id="selectOnJob" resultType="Coach">
+        SELECT * FROM coach
+        WHERE status = 1
+        ORDER BY coach_id
+    </select>
+
+    <select id="selectById" resultType="Coach">
+        SELECT * FROM coach WHERE coach_id = #{coachId}
+    </select>
+
+    <insert id="insert">
+        INSERT INTO coach(coach_name, phone, gender, specialty, hire_date, status, remark)
+        VALUES(#{coachName}, #{phone}, #{gender}, #{specialty}, #{hireDate}, #{status}, #{remark})
+    </insert>
+
+    <update id="updateById">
+        UPDATE coach
+        SET coach_name = #{coachName},
+            phone = #{phone},
+            gender = #{gender},
+            specialty = #{specialty},
+            hire_date = #{hireDate},
+            status = #{status},
+            remark = #{remark}
+        WHERE coach_id = #{coachId}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM coach WHERE coach_id = #{coachId}
+    </delete>
+
+    <select id="countCourseByCoach" resultType="int">
+        SELECT COUNT(*) FROM course WHERE coach_id = #{coachId}
+    </select>
+
+</mapper>

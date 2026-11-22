@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gym.mapper.CourseBookingMapper">
+
+    <sql id="joinColumns">
+        b.booking_id, b.member_id, b.course_id, b.booking_time, b.status, b.remark,
+        m.member_name AS member_name,
+        c.course_name AS course_name,
+        c.course_time AS course_time,
+        c.max_capacity AS max_capacity,
+        c.booked_count AS booked_count,
+        h.coach_name AS coach_name
+    </sql>
+
+    <select id="selectAll" resultType="CourseBooking">
+        SELECT <include refid="joinColumns" />
+        FROM course_booking b
+        LEFT JOIN member m ON b.member_id = m.member_id
+        LEFT JOIN course c ON b.course_id = c.course_id
+        LEFT JOIN coach h ON c.coach_id = h.coach_id
+        ORDER BY b.booking_time DESC
+    </select>
+
+    <select id="selectById" resultType="CourseBooking">
+        SELECT <include refid="joinColumns" />
+        FROM course_booking b
+        LEFT JOIN member m ON b.member_id = m.member_id
+        LEFT JOIN course c ON b.course_id = c.course_id
+        LEFT JOIN coach h ON c.coach_id = h.coach_id
+        WHERE b.booking_id = #{bookingId}
+    </select>
+
+    <select id="countActive" resultType="int">
+        SELECT COUNT(*) FROM course_booking
+        WHERE member_id = #{memberId} AND course_id = #{courseId} AND status = 1
+    </select>
+
+    <insert id="insert">
+        INSERT INTO course_booking(member_id, course_id, status, remark)
+        VALUES(#{memberId}, #{courseId}, 1, #{remark})
+    </insert>
+
+    <update id="cancelById">
+        UPDATE course_booking SET status = 0 WHERE booking_id = #{bookingId}
+    </update>
+
+</mapper>

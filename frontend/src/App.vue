@@ -1,5 +1,9 @@
 <template>
-  <div class="layout">
+  <!-- 未登录：只显示登录页 -->
+  <LoginView v-if="!isLoggedIn" @login-success="onLoginSuccess" />
+
+  <!-- 已登录：主界面 -->
+  <div class="layout" v-else>
     <!-- ========== 左侧菜单 ========== -->
     <aside class="sidebar">
       <div class="brand">
@@ -46,7 +50,9 @@
         </div>
         <div class="topbar-right">
           <span class="today">{{ todayText }}</span>
-          <div class="avatar">管</div>
+          <div class="avatar">{{ loginAdmin.realName?.charAt(0) || '管' }}</div>
+          <span class="admin-name">{{ loginAdmin.realName || loginAdmin.username }}</span>
+          <el-button type="danger" plain :icon="SwitchButton" size="small" @click="handleLogout">退出</el-button>
         </div>
       </header>
 
@@ -58,24 +64,69 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { User, Ticket, Bell, House, UserFilled, Calendar, Clock } from '@element-plus/icons-vue'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { User, Ticket, Bell, House, UserFilled, Calendar, Clock, SwitchButton } from '@element-plus/icons-vue'
 import MemberView from './views/MemberView.vue'
 import CardTypeView from './views/CardTypeView.vue'
+import CoachView from './views/CoachView.vue'
+import CourseView from './views/CourseView.vue'
+import BookingView from './views/BookingView.vue'
 import ReminderView from './views/ReminderView.vue'
+import LoginView from './views/LoginView.vue'
+import request from './utils/request'
+
+// 登录态：本地有 token 就认为已登录，具体有效性由后端拦截器把关
+const isLoggedIn = ref(!!localStorage.getItem('gym_token'))
+const loginAdmin = reactive({ username: '', realName: '' })
+
+const onLoginSuccess = async () => {
+  isLoggedIn.value = true
+  await loadAdminInfo()
+}
+
+const loadAdminInfo = async () => {
+  try {
+    const res = await request.get('/api/auth/info')
+    loginAdmin.username = res.data.username
+    loginAdmin.realName = res.data.realName
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+const handleLogout = async () => {
+  try {
+    await ElMessageBox.confirm('确定要退出登录吗？', '退出确认', {
+      type: 'warning', confirmButtonText: '退出', cancelButtonText: '取消'
+    })
+    await request.post('/api/auth/logout')
+  } catch (err) {
+    // 用户点取消则中止退出
+    if (err === 'cancel' || err?.message === 'cancel') return
+    console.error(err)
+    return
+  }
+  localStorage.removeItem('gym_token')
+  isLoggedIn.value = false
+  ElMessage.success('已退出登录')
+}
+
+onMounted(() => {
+  if (isLoggedIn.value) loadAdminInfo()
+})
 
 const menus = [
   { key: 'member', name: '会员管理', icon: User, component: MemberView },
   { key: 'card', name: '卡种套餐', icon: Ticket, component: CardTypeView },
+  { key: 'coach', name: '教练管理', icon: UserFilled, component: CoachView },
+  { key: 'course', name: '课程管理', icon: Calendar, component: CourseView },
+  { key: 'booking', name: '课程预约', icon: Clock, component: BookingView },
   { key: 'reminder', name: '到期提醒', icon: Bell, component: ReminderView }
 ]
 
-// 队友负责的模块，菜单先占位显示
-const comingMenus = [
-  { name: '教练管理', icon: UserFilled },
-  { name: '课程管理', icon: Calendar },
-  { name: '课程预约', icon: Clock }
-]
+// 全部模块已开发完成，待开发菜单留空
+const comingMenus = []
 
 const currentMenu = ref('member')
 const currentMenuName = computed(() =>
@@ -165,6 +216,7 @@ const todayText = new Intl.DateTimeFormat('zh-CN', {
   display: flex; align-items: center; justify-content: center;
   font-size: 13px; font-weight: 700;
 }
+.admin-name { font-size: 13px; color: #475569; font-weight: 600; }
 
 .content { padding: 22px 18px 30px; flex: 1; }
 .page-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; }

@@ -12,6 +12,15 @@ const request = axios.create({
   timeout: 10000
 })
 
+// 请求拦截器：自动带上登录 token（B2 登录权限）
+request.interceptors.request.use((config) => {
+  const token = localStorage.getItem('gym_token')
+  if (token) {
+    config.headers.Authorization = token
+  }
+  return config
+})
+
 request.interceptors.response.use(
   (response) => {
     const res = response.data
@@ -27,6 +36,13 @@ request.interceptors.response.use(
     return { code: 200, message: 'ok', data: res }
   },
   (error) => {
+    // 401：未登录或登录过期，清除 token 并回到登录页
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('gym_token')
+      ElMessage.warning('登录已失效，请重新登录')
+      window.location.reload()
+      return Promise.reject(error)
+    }
     ElMessage.error('服务不可用，请确认后端已启动')
     return Promise.reject(error)
   }

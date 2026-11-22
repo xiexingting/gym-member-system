@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gym.mapper.CourseMapper">
+
+    <!-- 公共列片段，避免每处都写一遍 -->
+    <sql id="baseColumns">
+        c.course_id, c.course_name, c.coach_id, c.course_time, c.duration,
+        c.max_capacity, c.booked_count, c.status, c.remark,
+        h.coach_name AS coach_name
+    </sql>
+
+    <select id="selectAll" resultType="Course">
+        SELECT <include refid="baseColumns" />
+        FROM course c
+        LEFT JOIN coach h ON c.coach_id = h.coach_id
+        ORDER BY c.course_time DESC
+    </select>
+
+    <select id="selectById" resultType="Course">
+        SELECT <include refid="baseColumns" />
+        FROM course c
+        LEFT JOIN coach h ON c.coach_id = h.coach_id
+        WHERE c.course_id = #{courseId}
+    </select>
+
+    <insert id="insert">
+        INSERT INTO course(course_name, coach_id, course_time, duration, max_capacity, booked_count, status, remark)
+        VALUES(#{courseName}, #{coachId}, #{courseTime}, #{duration}, #{maxCapacity},
+               #{bookedCount}, #{status}, #{remark})
+    </insert>
+
+    <update id="updateById">
+        UPDATE course
+        SET course_name = #{courseName},
+            coach_id = #{coachId},
+            course_time = #{courseTime},
+            duration = #{duration},
+            max_capacity = #{maxCapacity},
+            status = #{status},
+            remark = #{remark}
+        WHERE course_id = #{courseId}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM course WHERE course_id = #{courseId}
+    </delete>
+
+    <!-- 已预约人数不能小于 0，SQL 层再加一道保险 -->
+    <update id="updateBookedCount">
+        UPDATE course
+        SET booked_count = booked_count + #{delta}
+        WHERE course_id = #{courseId}
+          AND booked_count + #{delta} >= 0
+    </update>
+
+</mapper>
