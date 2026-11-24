@@ -2,6 +2,7 @@ package com.gym.controller;
 
 import com.gym.common.PageResult;
 import com.gym.common.Result;
+import com.gym.common.SensitiveUtil;
 import com.gym.entity.Member;
 import com.gym.entity.RechargeRecord;
 import com.gym.service.MemberService;
@@ -36,19 +37,24 @@ public class MemberController {
     @Resource
     private RechargeService rechargeService;
 
-    /** 查询会员列表（原接口，保留兼容现有前端） */
+    /** 查询会员列表（原接口，保留兼容现有前端）；身份证脱敏，不返回完整号码 */
     @GetMapping("/list")
     public Result<List<Member>> memberList() {
-        return Result.success(memberService.getAllMember());
+        return Result.success(SensitiveUtil.maskMembers(memberService.getAllMember()));
     }
 
-    /** 搜索 + 分页：GET /api/member/page?keyword=张&pageNum=1&pageSize=10 */
+    /**
+     * 搜索 + 分页：GET /api/member/page?keyword=张&pageNum=1&pageSize=10
+     * 身份证脱敏：只复制一份打码后返回，不改原始分页对象。
+     */
     @GetMapping("/page")
     public Result<PageResult<Member>> memberPage(
             @RequestParam(value = "keyword", required = false, defaultValue = "") String keyword,
             @RequestParam(value = "pageNum", defaultValue = "1") int pageNum,
             @RequestParam(value = "pageSize", defaultValue = "10") int pageSize) {
-        return Result.success(memberService.getMemberPage(keyword, pageNum, pageSize));
+        PageResult<Member> page = memberService.getMemberPage(keyword, pageNum, pageSize);
+        page.setList(SensitiveUtil.maskMembers(page.getList()));
+        return Result.success(page);
     }
 
     /** 新增会员：注册时间取当前时间，默认状态 1=正常 */
