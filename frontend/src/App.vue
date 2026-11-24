@@ -52,6 +52,9 @@
           <span class="today">{{ todayText }}</span>
           <div class="avatar">{{ loginAdmin.realName?.charAt(0) || '管' }}</div>
           <span class="admin-name">{{ loginAdmin.realName || loginAdmin.username }}</span>
+          <span class="role-tag" :class="loginAdmin.role === 2 ? 'role-readonly' : 'role-admin'">
+            {{ loginAdmin.role === 2 ? '只读' : '管理员' }}
+          </span>
           <el-button type="danger" plain :icon="SwitchButton" size="small" @click="handleLogout">退出</el-button>
         </div>
       </header>
@@ -78,7 +81,7 @@ import request from './utils/request'
 
 // 登录态：本地有 token 就认为已登录，具体有效性由后端拦截器把关
 const isLoggedIn = ref(!!localStorage.getItem('gym_token'))
-const loginAdmin = reactive({ username: '', realName: '' })
+const loginAdmin = reactive({ username: '', realName: '', role: 1 })
 
 const onLoginSuccess = async () => {
   isLoggedIn.value = true
@@ -90,6 +93,7 @@ const loadAdminInfo = async () => {
     const res = await request.get('/api/auth/info')
     loginAdmin.username = res.data.username
     loginAdmin.realName = res.data.realName
+    loginAdmin.role = res.data.role
   } catch (err) {
     console.error(err)
   }
@@ -217,6 +221,9 @@ const todayText = new Intl.DateTimeFormat('zh-CN', {
   font-size: 13px; font-weight: 700;
 }
 .admin-name { font-size: 13px; color: #475569; font-weight: 600; }
+.role-tag { font-size: 11px; line-height: 1; padding: 4px 7px; border-radius: 4px; white-space: nowrap; }
+.role-admin { background: #eef2ff; color: #4f46e5; }
+.role-readonly { background: #fef3c7; color: #b45309; }
 
 .content { padding: 22px 18px 30px; flex: 1; }
 .page-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; }

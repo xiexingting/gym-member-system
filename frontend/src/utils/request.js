@@ -43,6 +43,11 @@ request.interceptors.response.use(
       window.location.reload()
       return Promise.reject(error)
     }
+    // 403：只读角色执行了写操作，给出明确原因
+    if (error.response && error.response.status === 403) {
+      ElMessage.warning('当前账号为只读角色，无权执行此操作')
+      return Promise.reject(error)
+    }
     ElMessage.error('服务不可用，请确认后端已启动')
     return Promise.reject(error)
   }
