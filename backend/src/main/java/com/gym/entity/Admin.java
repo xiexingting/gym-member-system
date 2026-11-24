@@ -8,6 +8,8 @@ public class Admin {
     private String username;
     private String password;
     private String realName;
+    /** 角色：1=超级管理员（全部权限），2=普通员工（只读） */
+    private Integer role;
     private Integer status;
     private LocalDateTime createTime;
 
@@ -41,6 +43,14 @@ public class Admin {
 
     public void setRealName(String realName) {
         this.realName = realName;
+    }
+
+    public Integer getRole() {
+        return role;
+    }
+
+    public void setRole(Integer role) {
+        this.role = role;
     }
 
     public Integer getStatus() {

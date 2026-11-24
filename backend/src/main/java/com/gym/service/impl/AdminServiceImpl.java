@@ -5,6 +5,7 @@ import com.gym.entity.Admin;
 import com.gym.mapper.AdminMapper;
 import com.gym.service.AdminService;
 import jakarta.annotation.Resource;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -16,6 +17,9 @@ public class AdminServiceImpl implements AdminService {
     @Resource
     private TokenStore tokenStore;
 
+    /** BCrypt 编码器：用于校验加密后的密码 */
+    private static final BCryptPasswordEncoder PASSWORD_ENCODER = new BCryptPasswordEncoder();
+
     @Override
     public String login(String username, String password) {
         if (username == null || username.trim().isEmpty()) {
@@ -26,7 +30,20 @@ public class AdminServiceImpl implements AdminService {
         }
 
         Admin admin = adminMapper.selectByUsername(username.trim());
-        if (admin == null || !admin.getPassword().equals(password)) {
+        if (admin == null) {
+            throw new IllegalArgumentException("账号或密码错误");
+        }
+
+        // BCrypt 校验；兼容历史明文密码（形如 123456，非 $2 开头），
+        // 这样旧库不改也能登录，平滑过渡到全加密。
+        String stored = admin.getPassword();
+        boolean matched;
+        if (stored != null && stored.startsWith("$2")) {
+            matched = PASSWORD_ENCODER.matches(password, stored);
+        } else {
+            matched = password.equals(stored);
+        }
+        if (!matched) {
             throw new IllegalArgumentException("账号或密码错误");
         }
         if (admin.getStatus() != null && admin.getStatus() == 0) {
