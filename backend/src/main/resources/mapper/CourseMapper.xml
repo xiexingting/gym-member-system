@@ -45,12 +45,26 @@
         DELETE FROM course WHERE course_id = #{courseId}
     </delete>
 
-    <!-- 已预约人数不能小于 0，SQL 层再加一道保险 -->
+    <!-- 已预约人数不能小于 0，SQL 层再加一道保险（用于取消预约释放名额） -->
     <update id="updateBookedCount">
         UPDATE course
         SET booked_count = booked_count + #{delta}
         WHERE course_id = #{courseId}
           AND booked_count + #{delta} >= 0
+    </update>
+
+    <!--
+      原子占座：把「名额判断」和「+1」合并进同一条 UPDATE，由 InnoDB 行锁保证并发安全。
+      原来是 Java 里先查 booked_count 再单独 +1，两个请求同时通过校验就会超卖。
+      现在 WHERE 里带上 booked_count < max_capacity，抢不到位的影响行数为 0。
+      同时校验 status=1，防止课程在查询后被下架仍被占座。
+    -->
+    <update id="tryBookSeat">
+        UPDATE course
+        SET booked_count = booked_count + 1
+        WHERE course_id = #{courseId}
+          AND status = 1
+          AND booked_count &lt; max_capacity
     </update>
 
 </mapper>
